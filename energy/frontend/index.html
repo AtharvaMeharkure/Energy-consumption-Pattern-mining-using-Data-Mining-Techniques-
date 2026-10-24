@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoltPulse AI - Energy Consumption Pattern Mining Platform</title>
+  <meta name="description" content="State-of-the-art energy consumption intelligence platform powered by scikit-learn, Apriori association mining, K-Means clustering, and Isolation Forest anomaly detection.">
+  
+  <!-- Modern Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Plotly.js for interactive Heatmaps & PCA Scatter -->
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+  <!-- Chart.js for smooth animated line & bar charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="dark-theme">
+  <!-- Top Animated Ambient Glows -->
+  <div class="ambient-glow glow-cyan"></div>
+  <div class="ambient-glow glow-violet"></div>
+  <div class="ambient-glow glow-emerald"></div>
+
+  <!-- Main Container -->
+  <div class="app-wrapper">
+    
+    <!-- Top Navigation Bar -->
+    <header class="app-header">
+      <div class="brand-section">
+        <div class="brand-icon-wrapper">
+          <i data-lucide="zap" class="brand-icon"></i>
+          <span class="pulse-ring"></span>
+        </div>
+        <div class="brand-text">
+          <div class="brand-title">VOLTPULSE <span class="highlight-cyan">AI</span></div>
+          <div class="brand-subtitle">Energy Pattern Mining & Grid Intelligence</div>
+        </div>
+      </div>
+
+      <div class="header-badges">
+        <div class="status-pill" id="engineStatusPill">
+          <span class="status-dot pulsing"></span>
+          <span id="engineStatusText">Connecting to Engine...</span>
+        </div>
+        <div class="dataset-pill" id="datasetSourcePill">
+          <i data-lucide="database" class="pill-icon"></i>
+          <span id="datasetSourceText">Loading dataset...</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="loadSampleBtn" class="btn btn-secondary" title="Load bundled 60-day real sample data">
+          <i data-lucide="file-spreadsheet"></i>
+          <span>Sample CSV</span>
+        </button>
+        <button id="openUploadBtn" class="btn btn-primary" title="Upload custom energy dataset">
+          <i data-lucide="upload-cloud"></i>
+          <span>Upload CSV</span>
+        </button>
+        <button id="resetDataBtn" class="btn btn-ghost" title="Reset to standard 2-year synthetic benchmark">
+          <i data-lucide="rotate-ccw"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Global Filter & Date Banner -->
+    <section class="filter-strip">
+      <div class="filter-group seasons-filter">
+        <span class="filter-label"><i data-lucide="filter"></i> Seasons:</span>
+        <div class="season-toggles" id="seasonToggles">
+          <button class="season-pill active" data-season="Winter">Winter</button>
+          <button class="season-pill active" data-season="Spring">Spring</button>
+          <button class="season-pill active" data-season="Summer">Summer</button>
+          <button class="season-pill active" data-season="Autumn">Autumn</button>
+        </div>
+      </div>
+
+      <div class="filter-summary">
+        <div class="summary-chip" id="dateRangeChip">
+          <i data-lucide="calendar"></i>
+          <span id="dateRangeText">2023-01-01 to 2024-12-31</span>
+        </div>
+        <div class="summary-chip" id="recordCountChip">
+          <i data-lucide="activity"></i>
+          <span id="recordCountText">17,520 Hourly Samples</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6 High-Impact Glassmorphic KPI Cards -->
+    <section class="kpi-grid">
+      <!-- KPI 1: Average Demand -->
+      <div class="kpi-card" id="kpiAvgLoad">
+        <div class="kpi-header">
+          <span class="kpi-title">Average Load</span>
+          <div class="kpi-icon-badge cyan"><i data-lucide="activity"></i></div>
+        </div>
+        <div class="kpi-value-row">
+          <span class="kpi-number" id="valAvgLoad">--</span>
+          <span class="kpi-unit">kW</span>
+        </div>
+        <div class="kpi-meta">
+          <span class="meta-label">Standby Ratio:</span>
+          <span class="meta-highlight cyan" id="valStandbyRatio">--%</span>
+        </div>
+        <div class="kpi-bottom-glow cyan"></div>
+      </div>
+
+      <!-- KPI 2: Peak Demand -->
+      <div class="kpi-card" id="kpiPeakLoad">
+        <div class="kpi-header">
+          <span class="kpi-title">Peak Demand</span>
+          <div class="kpi-icon-badge rose"><i data-lucide="trending-up"></i></div>
+        </div>
+        <div class="kpi-value-row">
+          <span class="kpi-number" id="valPeakLoad">--</span>
+          <span class="kpi-unit">kW</span>
+        </div>
+        <div class="kpi-meta">
+          <span class="meta-label">High Season:</span>
+          <span class="meta-highlight rose" id="valHighSeason">--</span>
+        </div>
+        <div class="kpi-bottom-glow rose"></div>
+      </div>
+
+      <!-- KPI 3: Total Energy -->
+      <div class="kpi-card" id="kpiTotalEnergy">
+        <div class="kpi-header">
+          <span class="kpi-title">Cumulative Energy</span>
+          <div class="kpi-icon-badge amber"><i data-lucide="battery-charging"></i></div>
+        </div>
+        <div class="kpi-value-row">
+          <span class="kpi-number" id="valTotalEnergy">--</span>
+          <span class="kpi-unit">kWh</span>
+        </div>
+        <div class="kpi-meta">
+          <span class="meta-label">Est. Cost:</span>
+          <span class="meta-highlight amber" id="valEstCost">$ --</span>
+        </div>
+        <div class="kpi-bottom-glow amber"></div>
+      </div>
+
+      <!-- KPI 4: Peak Window Share -->
+      <div class="kpi-card" id="kpiPeakShare">
+        <div class="kpi-header">
+          <span class="kpi-title">Peak Window Share</span>
+          <div class="kpi-icon-badge purple"><i data-lucide="clock"></i></div>
+        </div>
+        <div class="kpi-value-row">
+          <span class="kpi-number" id="valPeakShare">--</span>
+          <span class="kpi-unit">%</span>
+        </div>
+        <div class="kpi-meta">
+          <span class="meta-label">Time Window:</span>
+          <span class="meta-highlight purple">17:00 – 21:59 (5h)</span>
+        </div>
+        <div class="kpi-bottom-glow purple"></div>
+      </div>
+
+      <!-- KPI 5: Standby Vampire Baseline -->
+      <div class="kpi-card" id="kpiStandby">
+        <div class="kpi-header">
+          <span class="kpi-title">Standby Baseline</span>
+          <div class="kpi-icon-badge emerald"><i data-lucide="power"></i></div>
+        </div>
+        <div class="kpi-value-row">
+          <span class="kpi-number" id="valStandby">--</span>
+          <span class="kpi-unit">kW</span>
+        </div>
+        <div class="kpi-meta">
+          <span class="meta-label">Always-on Waste:</span>
+          <span class="meta-highlight emerald" id="valStandbyDaily">-- kWh/day</span>
+        </div>
+        <div class="kpi-bottom-glow emerald"></div>
+      </div>
+
+      <!-- KPI 6: Flagged Anomalies -->
+      <div class="kpi-card" id="kpiAnomalies">
+        <div class="kpi-header">
+          <span class="kpi-title">Anomalies Flagged</span>
+          <div class="kpi-icon-badge red"><i data-lucide="shield-alert"></i></div>
+        </div>
+        <div class="kpi-value-row">
+          <span class="kpi-number" id="valAnomalies">--</span>
+          <span class="kpi-unit">events</span>
+        </div>
+        <div class="kpi-meta">
+          <span class="meta-label">Spike / Drop:</span>
+          <span class="meta-highlight red" id="valAnomalySplit">-- / --</span>
+        </div>
+        <div class="kpi-bottom-glow red"></div>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs Strip -->
+    <nav class="analytics-tabs" role="tablist">
+      <button class="tab-btn active" data-tab="patterns" id="tabPatterns" role="tab">
+        <i data-lucide="calendar-clock"></i>
+        <span>01. Temporal Dynamics</span>
+      </button>
+      <button class="tab-btn" data-tab="clusters" id="tabClusters" role="tab">
+        <i data-lucide="pie-chart"></i>
+        <span>02. Load Clusters</span>
+      </button>
+      <button class="tab-btn" data-tab="classification" id="tabClassification" role="tab">
+        <i data-lucide="cpu"></i>
+        <span>03. Predictive ML</span>
+      </button>
+      <button class="tab-btn" data-tab="rules" id="tabRules" role="tab">
+        <i data-lucide="git-merge"></i>
+        <span>04. Association Rules</span>
+      </button>
+      <button class="tab-btn" data-tab="anomalies" id="tabAnomalies" role="tab">
+        <i data-lucide="alert-octagon"></i>
+        <span>05. Anomaly Detection</span>
+      </button>
+      <button class="tab-btn" data-tab="insights" id="tabInsights" role="tab">
+        <i data-lucide="sparkles"></i>
+        <span>06. AI Insights & Simulator</span>
+      </button>
+    </nav>
+
+    <!-- Tab Content Panes -->
+    <main class="tabs-container">
+
+      <!-- ========================================== -->
+      <!-- TAB 1: TEMPORAL PATTERNS & LOAD DYNAMICS   -->
+      <!-- ========================================== -->
+      <section class="tab-pane active" id="pane-patterns">
+        <div class="pane-header">
+          <div>
+            <h2 class="pane-title">Temporal Load Patterns</h2>
+            <p class="pane-description">Diurnal cycles, weekday versus weekend variances, seasonality shifts, and ambient temperature correlation.</p>
+          </div>
+          <div class="pane-badge">
+            <i data-lucide="clock"></i>
+            <span>24-Hour Diurnal Resolution</span>
+          </div>
+        </div>
+
+        <!-- 2D Heatmap Card -->
+        <div class="glass-card mb-4">
+          <div class="card-title-row">
+            <div class="card-heading">
+              <i data-lucide="grid"></i>
+              <h3>Load Density Matrix (Day of Week × Hour)</h3>
+            </div>
+            <div class="card-caption">Color heat represents average kW power draw</div>
+          </div>
+          <div id="heatmapPlot" class="plotly-chart-container"></div>
+        </div>
+
+        <!-- Dual Chart Row -->
+        <div class="grid-2-col mb-4">
+          <!-- Weekday vs Weekend -->
+          <div class="glass-card">
+            <div class="card-title-row">
+              <div class="card-heading">
+                <i data-lucide="git-commit"></i>
+                <h3>Weekday vs Weekend Profile</h3>
+              </div>
+              <div class="card-caption">24-hour mean trajectory</div>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="chartWeekdayWeekend"></canvas>
+            </div>
+          </div>
+
+          <!-- Monthly Average Load -->
+          <div class="glass-card">
+            <div class="card-title-row">
+              <div class="card-heading">
+                <i data-lucide="bar-chart-3"></i>
+                <h3>Monthly Load Profile</h3>
+              </div>
+              <div class="card-caption">Annual seasonal swings</div>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="chartMonthly"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Temperature vs Load Correlation -->
+        <div class="glass-card">
+          <div class="card-title-row">
+            <div class="card-heading">
+              <i data-lucide="thermometer-sun"></i>
+              <h3>Load vs Temperature Correlation</h3>
+            </div>
+            <div class="card-caption">HVAC heating (U-shape left) & cooling demand (U-shape right)</div>
+          </div>
+          <div id="tempScatterPlot" class="plotly-chart-container"></div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 2: LOAD CLUSTERING (UNSUPERVISED)      -->
+      <!-- ========================================== -->
+      <section class="tab-pane" id="pane-clusters">
+        <div class="pane-header">
+          <div>
+            <h2 class="pane-title">Daily Load Profile Clustering (K-Means)</h2>
+            <p class="pane-description">Discovers archetypal daily consumption shapes by projecting 24-hour load vectors into reduced latent spaces.</p>
+          </div>
+          <div class="pane-badge" id="clusterKBadge">
+            <i data-lucide="crosshair"></i>
+            <span>Optimal k = 4 Clusters</span>
+          </div>
+        </div>
+
+        <!-- Centroids & PCA Row -->
+        <div class="grid-2-col mb-4">
+          <!-- Centroids Curve -->
+          <div class="glass-card">
+            <div class="card-title-row">
+              <div class="card-heading">
+                <i data-lucide="activity"></i>
+                <h3>Cluster Centroids (24h Profiles)</h3>
+              </div>
+              <div class="card-caption">Distinct daily consumer behavior curves</div>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="chartCentroids"></canvas>
+            </div>
+          </div>
+
+          <!-- PCA 2D Scatter -->
+          <div class="glass-card">
+            <div class="card-title-row">
+              <div class="card-heading">
+                <i data-lucide="disc"></i>
+                <h3>Latent Space (PCA Projection)</h3>
+              </div>
+              <div class="card-caption">First two principal components</div>
+            </div>
+            <div id="pcaPlot" class="plotly-chart-container"></div>
+          </div>
+        </div>
+
+        <!-- Elbow & Silhouette Evaluation Row -->
+        <div class="grid-2-col mb-4">
+          <!-- Elbow Method -->
+          <div class="glass-card">
+            <div class="card-title-row">
+              <div class="card-heading">
+                <i data-lucide="trending-down"></i>
+                <h3>Elbow Method (Inertia)</h3>
+              </div>
+              <div class="card-caption">Within-cluster sum of squared distances</div>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="chartElbow"></canvas>
+            </div>
+          </div>
+
+          <!-- Silhouette Score -->
+          <div class="glass-card">
+            <div class="card-title-row">
+              <div class="card-heading">
+                <i data-lucide="award"></i>
+                <h3>Silhouette Analysis</h3>
+              </div>
+              <div class="card-caption">Cluster separation quality metric</div>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="chartSilhouette"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cluster Days Distribution Table -->
+        <div class="glass-card">
+          <div class="card-title-row">
+            <div class="card-heading">
+              <i data-lucide="table"></i>
+              <h3>Cluster Membership Breakdown</h3>
+            </div>
+            <div class="card-caption">Days assigned per cluster archetype</div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table" id="clusterDistTable">
+              <thead>
+                <tr>
+                  <th>Cluster Identifier</th>
+                  <th>Total Days</th>
+                  <th>Percentage of Days</th>
+                  <th>Average Load (kW)</th>
+                  <th>Demand Target Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 3: MACHINE LEARNING CLASSIFICATION     -->
+      <!-- ========================================== -->
+      <section class="tab-pane" id="pane-classification">
+        <div class="pane-header">
+          <div>
+            <h2 class="pane-title">Predictive ML Classification</h2>
+            <p class="pane-description">Multi-class consumption tier prediction (Low / Medium / High) using historical lag features without future leakage.</p>
+          </div>
+          <div class="pane-badge">
+            <i data-lucide="layers"></i>
+            <span>80/20 Chronological Split</span>
+          </div>
+        </div>
+
+        <!-- Tertiles Info Banner -->
+        <div class="info-alert mb-4">
+          <i data-lucide="info" class="alert-icon"></i>
+          <div class="alert-content">
+            <strong>Tertile Classification Thresholds:</strong>
+            <span id="classificationThresholdText">Low &le; 0.52 kW &lt; Medium &le; 1.08 kW &lt; High</span>
+            <span class="alert-sub">Evaluated on test set with 24h & 168h autoregressive lag features.</span>
+          </div>
+        </div>
+
+        <!-- Model Comparison & Feature Importance -->
+        <div class="grid-2-col mb-4">
+          <!-- Model Performance Cards -->
+          <div class="glass-card">
+            <div class="card-title-row">
+              <div class="card-heading">
+                <i data-lucide="gauge"></i>
+                <h3>Model Benchmark Evaluation</h3>
+              </div>
+              <div class="card-caption">Accuracy & Macro F1 Score</div>
+            </div>
+            <div class="model-cards-row" id="modelComparisonCards">
+              <!-- Injected via JS -->
+            </div>
+            <div class="mt-4">
+              <h4 class="subheading">Class-by-Class Breakdown (Random Forest)</h4>
+              <div class="table-responsive mt-2">
+                <table class="data-table compact" id="classReportTable">
+                  <thead>
+                    <tr>
+                      <th>Tier</th>
+                      <th>Precision</th>
+                      <th>Recall</th>
+                      <th>F1-Score</th>
+                      <th>Support</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Feature Importance -->
+          <div class="glass-card">
+            <div class="card-title-row">
+              <div class="card-heading">
+                <i data-lucide="sparkle"></i>
+                <h3>Feature Importance (Random Forest)</h3>
+              </div>
+              <div class="card-caption">Predictive contribution by feature</div>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="chartFeatureImportance"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Confusion Matrix & Live Inference Tool -->
+        <div class="grid-2-col mb-4">
+          <!-- Confusion Matrix -->
+          <div class="glass-card">
+            <div class="card-title-row">
+              <div class="card-heading">
+                <i data-lucide="check-check"></i>
+                <h3>Confusion Matrix</h3>
+              </div>
+              <div class="card-caption">Predicted vs Actual test observations</div>
+            </div>
+            <div id="confusionMatrixPlot" class="plotly-chart-container"></div>
+          </div>
+
+          <!-- Interactive Live ML Inference Engine -->
+          <div class="glass-card interactive-tool-card">
+            <div class="card-title-row">
+              <div class="card-heading">
+                <i data-lucide="play-circle"></i>
+                <h3>Live ML Inference Simulator</h3>
+              </div>
+              <div class="card-caption">Test the model with custom parameters</div>
+            </div>
+            
+            <form id="livePredictForm" class="predict-form">
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="inputHour">Hour of Day (0-23)</label>
+                  <input type="number" id="inputHour" min="0" max="23" value="19" class="form-input">
+                </div>
+                <div class="form-group">
+                  <label for="inputTemp">Ambient Temp (°C)</label>
+                  <input type="number" id="inputTemp" step="0.5" value="28.0" class="form-input">
+                </div>
+              </div>
+
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="inputDow">Day of Week</label>
+                  <select id="inputDow" class="form-input">
+                    <option value="0">Monday</option>
+                    <option value="1">Tuesday</option>
+                    <option value="2" selected>Wednesday</option>
+                    <option value="3">Thursday</option>
+                    <option value="4">Friday</option>
+                    <option value="5">Saturday</option>
+                    <option value="6">Sunday</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="inputMonth">Month</label>
+                  <select id="inputMonth" class="form-input">
+                    <option value="1">January (Winter)</option>
+                    <option value="4">April (Spring)</option>
+                    <option value="7" selected>July (Summer)</option>
+                    <option value="10">October (Autumn)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="inputLag24">Yesterday's Same Hour (kW)</label>
+                  <input type="number" id="inputLag24" step="0.05" value="1.85" class="form-input">
+                </div>
+                <div class="form-group">
+                  <label for="inputLag168">Last Week's Same Hour (kW)</label>
+                  <input type="number" id="inputLag168" step="0.05" value="1.70" class="form-input">
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-block" id="runInferenceBtn">
+                <i data-lucide="zap"></i> Run ML Inference
+              </button>
+            </form>
+
+            <!-- Inference Output Card -->
+            <div class="prediction-result-box" id="predictionResultBox">
+              <div class="result-tier-badge" id="resTierBadge">Result: High</div>
+              <div class="prob-bars-container" id="probBarsContainer">
+                <!-- Probabilities injected via JS -->
+              </div>
+              <div class="factors-list" id="resFactorsList"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 4: ASSOCIATION RULE MINING             -->
+      <!-- ========================================== -->
+      <section class="tab-pane" id="pane-rules">
+        <div class="pane-header">
+          <div>
+            <h2 class="pane-title">Association Rule Mining (Apriori)</h2>
+            <p class="pane-description">Discovers multi-condition dependencies linking environmental conditions, dayparts, and seasonal triggers to consumption tiers.</p>
+          </div>
+          <div class="pane-badge">
+            <i data-lucide="filter"></i>
+            <span>Lift &gt; 1.05 &middot; Conf &ge; 60%</span>
+          </div>
+        </div>
+
+        <div class="glass-card mb-4">
+          <div class="table-controls-row">
+            <div class="search-box">
+              <i data-lucide="search"></i>
+              <input type="text" id="ruleSearchInput" placeholder="Filter rules (e.g. Winter, Cold, Peak)...">
+            </div>
+            <div class="sort-selector">
+              <label for="ruleSortSelect">Sort by:</label>
+              <select id="ruleSortSelect" class="form-select">
+                <option value="lift" selected>Lift (Highest First)</option>
+                <option value="confidence">Confidence (Highest First)</option>
+                <option value="support">Support (Highest First)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table" id="rulesTable">
+              <thead>
+                <tr>
+                  <th style="width: 80px;">Rule #</th>
+                  <th>Antecedents (Conditions)</th>
+                  <th style="width: 40px; text-align: center;">&rarr;</th>
+                  <th>Consequent (Outcome)</th>
+                  <th>Support</th>
+                  <th>Confidence</th>
+                  <th>Lift</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+          <div id="rulesEmptyNotice" class="empty-state-notice hidden">
+            <i data-lucide="info"></i>
+            <span>No rules match the filter criteria or passed the support threshold.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 5: ANOMALY DETECTION                   -->
+      <!-- ========================================== -->
+      <section class="tab-pane" id="pane-anomalies">
+        <div class="pane-header">
+          <div>
+            <h2 class="pane-title">Anomaly & Fault Detection Engine</h2>
+            <p class="pane-description">Ensemble of Isolation Forest and Robust Median Absolute Deviation (MAD) Z-score to detect equipment spikes and outages.</p>
+          </div>
+          <div class="pane-badge rose">
+            <i data-lucide="shield-alert"></i>
+            <span id="anomalyRateBadge">Anomaly Contamination: 1.0%</span>
+          </div>
+        </div>
+
+        <!-- Anomaly Time Series Chart -->
+        <div class="glass-card mb-4">
+          <div class="card-title-row">
+            <div class="card-heading">
+              <i data-lucide="line-chart"></i>
+              <h3>Load Sequence with Flagged Anomalies</h3>
+            </div>
+            <div class="card-caption">Spikes highlighted in red, sensor drops in amber</div>
+          </div>
+          <div class="chart-wrapper-tall">
+            <canvas id="chartAnomalySeries"></canvas>
+          </div>
+        </div>
+
+        <!-- Top 50 Anomalies Table -->
+        <div class="glass-card">
+          <div class="card-title-row">
+            <div class="card-heading">
+              <i data-lucide="alert-triangle"></i>
+              <h3>Critical Anomaly Audit Log</h3>
+            </div>
+            <div class="card-caption">Ranked by absolute Robust Z-score deviation</div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table" id="anomaliesTable">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Day & Hour</th>
+                  <th>Observed Load (kW)</th>
+                  <th>Robust Z-Score</th>
+                  <th>Event Type</th>
+                  <th>Ambient Temp</th>
+                  <th>Remediation Recommendation</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 6: AI INSIGHTS & WHAT-IF SIMULATOR     -->
+      <!-- ========================================== -->
+      <section class="tab-pane" id="pane-insights">
+        <div class="pane-header">
+          <div>
+            <h2 class="pane-title">Energy-Saving Insights & What-If Scenario Suite</h2>
+            <p class="pane-description">Actionable domain heuristics synthesized from patterns, clusters, and anomalies, paired with an interactive ROI calculator.</p>
+          </div>
+          <div class="pane-badge emerald">
+            <i data-lucide="sparkles"></i>
+            <span>Interactive ROI & Carbon Suite</span>
+          </div>
+        </div>
+
+        <!-- AI Insights Cards Grid -->
+        <div class="insights-grid mb-5" id="insightsCardsContainer">
+          <!-- Injected via JS -->
+        </div>
+
+        <!-- Interactive What-If Scenario Simulator -->
+        <div class="glass-card simulator-card">
+          <div class="simulator-header">
+            <div>
+              <h3 class="simulator-title"><i data-lucide="sliders"></i> Interactive Demand-Response & Vampire Load Simulator</h3>
+              <p class="simulator-desc">Adjust operational policies to calculate instantaneous financial savings and carbon footprint reduction.</p>
+            </div>
+            <div class="live-calc-badge">
+              <span class="pulsing-green-dot"></span>
+              <span>Live Simulation Active</span>
+            </div>
+          </div>
+
+          <div class="simulator-body">
+            <!-- Controls Column -->
+            <div class="simulator-controls">
+              <!-- Slider 1 -->
+              <div class="sim-control-group">
+                <div class="sim-label-row">
+                  <label for="simPeakShift">Peak Load Shifting (17:00 – 21:59)</label>
+                  <span class="sim-val" id="valSimPeakShift">20%</span>
+                </div>
+                <input type="range" id="simPeakShift" min="0" max="60" step="5" value="20" class="range-slider">
+                <span class="sim-hint">Shift flexible loads (dishwashers, EV chargers, water heaters) outside peak tariff hours.</span>
+              </div>
+
+              <!-- Slider 2 -->
+              <div class="sim-control-group">
+                <div class="sim-label-row">
+                  <label for="simStandby">Standby Vampire Load Reduction</label>
+                  <span class="sim-val" id="valSimStandby">25%</span>
+                </div>
+                <input type="range" id="simStandby" min="0" max="50" step="5" value="25" class="range-slider">
+                <span class="sim-hint">Smart plugs, automated power strips, and sleeping idle electronics.</span>
+              </div>
+
+              <!-- Tariff Configuration -->
+              <div class="grid-2-col mt-3">
+                <div class="form-group">
+                  <label for="simPeakTariff">Peak Tariff ($/kWh)</label>
+                  <input type="number" id="simPeakTariff" step="0.01" value="0.28" class="form-input">
+                </div>
+                <div class="form-group">
+                  <label for="simOffpeakTariff">Off-Peak Tariff ($/kWh)</label>
+                  <input type="number" id="simOffpeakTariff" step="0.01" value="0.12" class="form-input">
+                </div>
+              </div>
+            </div>
+
+            <!-- Savings Metrics Column -->
+            <div class="simulator-results-panel">
+              <div class="sim-result-card highlight">
+                <span class="sim-kpi-label">Annual Financial Savings</span>
+                <div class="sim-kpi-value" id="simDollarSaved">$ 0.00</div>
+                <span class="sim-kpi-sub" id="simPctSaved">0% Total Bill Cut</span>
+              </div>
+
+              <div class="sim-result-card">
+                <span class="sim-kpi-label">Energy Eliminated</span>
+                <div class="sim-kpi-value" id="simKwhSaved">0 kWh/yr</div>
+                <span class="sim-kpi-sub" id="simKwhShifted">0 kWh Shifted to Off-Peak</span>
+              </div>
+
+              <div class="sim-result-card">
+                <span class="sim-kpi-label">CO₂ Emissions Avoided</span>
+                <div class="sim-kpi-value emerald" id="simCo2Saved">0 kg CO₂</div>
+                <span class="sim-kpi-sub" id="simTreesEquiv">Equivalent to 0 trees planted</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <div class="footer-left">
+        <span>&copy; 2026 VoltPulse AI &bull; Energy Consumption Pattern Mining Engine</span>
+        <span class="divider-pipe">|</span>
+        <span>Algorithms: K-Means, Random Forest, Apriori, Isolation Forest, Robust MAD</span>
+      </div>
+      <div class="footer-right">
+        <span class="pulse-indicator-small"></span>
+        <span>Engine: FastAPI &middot; scikit-learn &middot; Python 3.13</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Upload Modal Dialog -->
+  <div class="modal-overlay hidden" id="uploadModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <i data-lucide="upload-cloud" class="modal-icon"></i>
+          <div>
+            <h3 class="modal-title">Upload Energy Consumption Dataset</h3>
+            <p class="modal-subtitle">Upload your CSV with hourly or multi-minute readings.</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="closeUploadModalBtn"><i data-lucide="x"></i></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="drop-zone" id="dropZone">
+          <i data-lucide="file-up" class="drop-icon"></i>
+          <p class="drop-title">Drag & drop your CSV file here, or <span class="browse-link">browse</span></p>
+          <p class="drop-hint">Requires at least 30 days of data. Resampled automatically to hourly mean.</p>
+          <input type="file" id="csvFileInput" accept=".csv" class="hidden">
+        </div>
+
+        <div class="schema-guidance">
+          <h4>Required CSV Column Formats:</h4>
+          <ul>
+            <li><strong>Timestamp:</strong> <code>datetime</code>, <code>Timestamp</code>, or <code>Date</code> + <code>Time</code></li>
+            <li><strong>Active Power:</strong> <code>kw</code>, <code>EnergyConsumption</code>, <code>power</code>, or <code>Global_active_power</code></li>
+            <li><strong>Weather (Optional):</strong> <code>temp_c</code> or <code>Temperature</code> (seasonal proxy applied if absent)</li>
+          </ul>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="cancelUploadBtn">Cancel</button>
+          <button class="btn btn-primary" id="confirmUploadBtn" disabled>
+            <i data-lucide="play"></i> Analyze Dataset
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div class="global-loader hidden" id="globalLoader">
+    <div class="loader-content">
+      <div class="loader-spinner"></div>
+      <div class="loader-title" id="loaderTitle">Executing Pipeline...</div>
+      <div class="loader-desc" id="loaderDesc">Computing K-Means clusters, training Random Forest, and mining Apriori rules...</div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Client Application Script -->
+  <script src="/static/app.js"></script>
+</body>
+</html>

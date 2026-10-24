@@ -1,0 +1,10 @@
+pandas>=2.0
+numpy
+scikit-learn
+mlxtend
+plotly
+streamlit>=1.50
+matplotlib
+fastapi
+uvicorn
+python-multipart
